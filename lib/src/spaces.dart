@@ -5,10 +5,7 @@ import 'package:xml/xml.dart' as xml;
 import 'client.dart';
 import 'bucket.dart';
 
-enum Provider {
-  amazon,
-  yandex,
-}
+enum Provider { amazon, yandex, digitalOcean }
 
 class Spaces extends Client {
   final Provider provider;
@@ -31,7 +28,10 @@ class Spaces extends Client {
   Bucket bucket(String bucket) {
     switch (provider) {
       case Provider.amazon:
-        _endpointUrl = "https://s3.${region}.amazonaws.com";
+        _endpointUrl = "https://s3.$region.amazonaws.com";
+        break;
+      case Provider.digitalOcean:
+        _endpointUrl = "https://$region.digitaloceanspaces.com";
         break;
       case Provider.yandex:
         _endpointUrl = "https://storage.yandexcloud.net";
