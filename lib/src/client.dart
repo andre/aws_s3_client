@@ -26,25 +26,21 @@ class Client {
   final String region;
   final String accessKey;
   final String secretKey;
-  final String sessionToken;
+  final String? sessionToken;
   final String service;
 
   @protected
   final http.Client httpClient;
 
   Client(
-      {@required this.region,
-      @required this.accessKey,
-      @required this.secretKey,
-      @required this.service,
+      {required this.region,
+      required this.accessKey,
+      required this.secretKey,
+      required this.service,
       this.sessionToken,
-      http.Client httpClient})
+      http.Client? httpClient})
       : this.httpClient =
-            httpClient == null ? http.ConsoleClient() : httpClient {
-    assert(this.region != null);
-    assert(this.accessKey != null);
-    assert(this.secretKey != null);
-  }
+            httpClient == null ? http.ConsoleClient() : httpClient {}
 
   @protected
   Future<xml.XmlDocument> getUri(Uri uri) async {
@@ -77,8 +73,8 @@ class Client {
   }
 
   @protected
-  String signRequest(http.Request request,
-      {Digest contentSha256, int expires = 86400}) {
+  String? signRequest(http.Request request,
+      {Digest? contentSha256, int expires = 86400}) {
     // Build canonical request
     String httpMethod = request.method;
     String canonicalURI = request.uri.path;
@@ -105,7 +101,7 @@ class Client {
     String credential =
         '${accessKey}/${dateYYYYMMDD}/${region}/${service}/aws4_request';
     // Build canonical headers string
-    Map<String, List<String>> headers = Map<String, List<String>>();
+    Map<String, List<String>?> headers = Map<String, List<String>?>();
     request.headers.add('x-amz-date', dateIso8601); // Set date in header
     if (contentSha256 != null) {
       request.headers.add('x-amz-content-sha256',
@@ -117,7 +113,7 @@ class Client {
     List<String> headerNames = headers.keys.toList()..sort();
     String canonicalHeaders = headerNames
         .map((s) =>
-            (headers[s].map((v) => ('${s}:${_trimAll(v)}')).join('\n') + '\n'))
+            (headers[s]!.map((v) => ('${s}:${_trimAll(v)}')).join('\n') + '\n'))
         .join();
 
     String signedHeaders = headerNames.join(';');
@@ -127,7 +123,7 @@ class Client {
       ..addAll(request.uri.queryParameters);
     List<String> queryKeys = queryParameters.keys.toList()..sort();
     String canonicalQueryString = queryKeys
-        .map((s) => '${_uriEncode(s)}=${_uriEncode(queryParameters[s])}')
+        .map((s) => '${_uriEncode(s)}=${_uriEncode(queryParameters[s]!)}')
         .join('&');
 
     // Sign headers
@@ -162,15 +158,15 @@ class Client {
   }
 
   @protected
-  Map<String, String> composeChunkRequestHeaders(
-      {Uri uri,
-      String dateIso8601,
-      String dateYYYYMMDD,
-      String contentType,
-      int contentLength,
-      int chunkContentLengthWithMeta,
-      Permissions permissions,
-      Map<String, String> meta}) {
+  Map<String, String?> composeChunkRequestHeaders(
+      {required Uri uri,
+      String? dateIso8601,
+      required String dateYYYYMMDD,
+      String? contentType,
+      int? contentLength,
+      int? chunkContentLengthWithMeta,
+      Permissions? permissions,
+      Map<String, String>? meta}) {
     // Build canonical request
     String httpMethod = 'PUT';
     String canonicalURI = uri.path;
@@ -178,7 +174,7 @@ class Client {
 
     String credential =
         '${accessKey}/${dateYYYYMMDD}/${region}/${service}/aws4_request';
-    Map<String, String> resultHeaders = {
+    Map<String, String?> resultHeaders = {
       'x-amz-date': dateIso8601, // Set date in header
       'x-amz-content-sha256':
           'STREAMING-AWS4-HMAC-SHA256-PAYLOAD', // Set payload hash in header
@@ -199,16 +195,16 @@ class Client {
       resultHeaders['x-amz-acl'] = 'public-read';
     }
     // Build canonical headers string
-    Map<String, List<String>> headers = Map<String, List<String>>();
+    Map<String, List<String>?> headers = Map<String, List<String>?>();
     resultHeaders.keys.forEach((String name) => (headers[name.toLowerCase()] =
         resultHeaders[name] is List
-            ? resultHeaders[name]
-            : [resultHeaders[name]]));
+            ? resultHeaders[name] as List<String>?
+            : [resultHeaders[name]!]));
     headers['host'] = [host]; // Host is a builtin header
     List<String> headerNames = headers.keys.toList()..sort();
     String canonicalHeaders = headerNames
         .map((s) =>
-            (headers[s].map((v) => ('${s}:${_trimAll(v)}')).join('\n') + '\n'))
+            (headers[s]!.map((v) => ('${s}:${_trimAll(v)}')).join('\n') + '\n'))
         .join();
 
     String signedHeaders = headerNames.join(';');
@@ -218,7 +214,7 @@ class Client {
       ..addAll(uri.queryParameters);
     List<String> queryKeys = queryParameters.keys.toList()..sort();
     String canonicalQueryString = queryKeys
-        .map((s) => '${_uriEncode(s)}=${_uriEncode(queryParameters[s])}')
+        .map((s) => '${_uriEncode(s)}=${_uriEncode(queryParameters[s]!)}')
         .join('&');
 
     // Sign headers
@@ -254,9 +250,9 @@ class Client {
 
   String calculateChunkedSignature(
     List<int> data,
-    String prevSignature, {
-    String dateIso8601,
-    String dateYYYYMMDD,
+    String? prevSignature, {
+    String? dateIso8601,
+    required String dateYYYYMMDD,
   }) {
     String stringToSign =
         'AWS4-HMAC-SHA256-PAYLOAD\n${dateIso8601}\n${dateYYYYMMDD}/${region}/${service}/aws4_request\n$prevSignature\n${sha256.convert([])}\n${sha256.convert(data)}';

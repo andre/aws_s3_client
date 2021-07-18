@@ -5,11 +5,12 @@ import 'package:aws_s3_client/src/client.dart';
 /// StreamTransformer which collects values until it will exceed [chunkSize].
 /// Emits chunks of [chunkSize] except the last one, which can be smaller
 class ChunkTransformer implements StreamTransformer<List<int>, List<int>> {
-  int _chunkSize;
-  StreamController _controller;
-  StreamSubscription _subscription;
-  bool cancelOnError;
-  Stream<List<int>> _stream;
+  int? _chunkSize;
+  late StreamController _controller;
+  // ignore: cancel_subscriptions
+  StreamSubscription? _subscription;
+  bool? cancelOnError;
+  late Stream<List<int>> _stream;
   final _buffer = <int>[];
 
   ChunkTransformer(
@@ -21,10 +22,10 @@ class ChunkTransformer implements StreamTransformer<List<int>, List<int>> {
         onListen: _onListen,
         onCancel: _onCancel,
         onPause: () {
-          _subscription.pause();
+          _subscription!.pause();
         },
         onResume: () {
-          _subscription.resume();
+          _subscription!.resume();
         },
         sync: sync);
   }
@@ -46,7 +47,7 @@ class ChunkTransformer implements StreamTransformer<List<int>, List<int>> {
   }
 
   void _onCancel() {
-    _subscription.cancel();
+    _subscription!.cancel();
     _subscription = null;
   }
 
@@ -63,16 +64,16 @@ class ChunkTransformer implements StreamTransformer<List<int>, List<int>> {
   }
 
   void _emitData() {
-    if (_buffer.length >= _chunkSize) {
+    if (_buffer.length >= _chunkSize!) {
       _controller.add(_buffer.sublist(0, _chunkSize));
-      _buffer.removeRange(0, _chunkSize);
+      _buffer.removeRange(0, _chunkSize!);
       _emitData();
     }
   }
 
   Stream<List<int>> bind(Stream<List<int>> stream) {
     this._stream = stream;
-    return _controller.stream;
+    return _controller.stream as Stream<List<int>>;
   }
 
   StreamTransformer<RS, RT> cast<RS, RT>() => StreamTransformer.castFrom(this);
